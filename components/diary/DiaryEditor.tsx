@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useTransition } from "react";
-import { ChevronLeft, Trash2, Sparkles, Pencil, AlertTriangle } from "lucide-react";
+import { ChevronLeft, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -28,6 +26,17 @@ export interface DiaryEditorProps {
   onRequestAI?: () => Promise<{ content: string; noCalendarEvents?: boolean }>;
 }
 
+function formatDate(dateStr: string): { year: string; month: string; day: string; weekday: string } {
+  const d = new Date(dateStr + "T00:00:00");
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return {
+    year: String(d.getFullYear()),
+    month: String(d.getMonth() + 1),
+    day: String(d.getDate()),
+    weekday: weekdays[d.getDay()],
+  };
+}
+
 export function DiaryEditor({
   date,
   initialContent,
@@ -44,11 +53,10 @@ export function DiaryEditor({
   const [aiDraftLoaded, setAiDraftLoaded] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  // Track in-flight request to prevent duplicate calls (transient, no re-render needed)
   const aiRequestInFlightRef = useRef(false);
 
-  // Derived: is this an edit of existing diary?
   const isEditing = initialContent.length > 0;
+  const { year, month, day, weekday } = formatDate(date);
 
   const handleSave = useCallback(() => {
     if (content.trim() === "") {
@@ -58,10 +66,6 @@ export function DiaryEditor({
     setError(null);
     onSave(content);
   }, [content, onSave]);
-
-  const handleBack = useCallback(() => {
-    onBack();
-  }, [onBack]);
 
   const handleDeleteClick = useCallback(() => {
     setIsDeleteDialogOpen(true);
@@ -102,101 +106,110 @@ export function DiaryEditor({
   const aiButtonLabel = aiDraftLoaded ? "AI 재생성" : "AI 추천";
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Button
+    <div className="flex flex-col gap-5">
+      {/* Top bar */}
+      <div className="flex items-center justify-between">
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           aria-label="뒤로"
-          onClick={handleBack}
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-600 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span>뒤로</span>
-        </Button>
+          돌아가기
+        </button>
 
-        <span className="flex-1 font-semibold text-base">{date}</span>
+        <div className="flex items-center gap-2">
+          {isLoggedIn && user && (
+            <div className="w-7 h-7 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-xs font-semibold">
+              {user.name?.split(" ").filter(p => p.length > 0).map(p => p[0]).join("").toUpperCase().slice(0, 2) || "?"}
+            </div>
+          )}
+          {isEditing && (
+            <button
+              type="button"
+              aria-label="삭제"
+              onClick={handleDeleteClick}
+              className="text-stone-300 hover:text-red-400 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
 
-        {isLoggedIn && user && (
-          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-            {user.name?.split(" ").filter(p => p.length > 0).map(p => p[0]).join("").toUpperCase().slice(0, 2) || "?"}
+      {/* Paper card */}
+      <div className="bg-[#fffdf7] border border-amber-100 rounded-2xl shadow-sm p-6 flex flex-col gap-4">
+        {/* Date heading */}
+        <div className="border-b border-amber-100 pb-3">
+          <p className="text-xs text-stone-400 tracking-widest uppercase">{year}</p>
+          <h2 className="text-2xl font-semibold text-stone-700">
+            {month}월 {day}일 <span className="text-lg font-normal text-stone-400">{weekday}요일</span>
+          </h2>
+        </div>
+
+        {/* AI loading skeleton */}
+        {isPending && (
+          <div role="status" aria-label="로딩 중" className="space-y-2">
+            <Skeleton className="h-3 w-full bg-amber-100" />
+            <Skeleton className="h-3 w-full bg-amber-100" />
+            <Skeleton className="h-3 w-3/4 bg-amber-100" />
           </div>
         )}
 
-        {isEditing && (
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Pencil className="w-3 h-3" />
-            수정 중
-          </Badge>
+        {/* Textarea */}
+        <textarea
+          value={content}
+          onChange={(e) => {
+            setContent(e.target.value);
+            if (error) setError(null);
+          }}
+          placeholder="오늘 하루를 기록해 보세요..."
+          aria-label="일기 내용"
+          className={[
+            isPending ? "hidden" : "",
+            "w-full min-h-[120px] resize-none bg-transparent",
+            "text-stone-700 text-sm leading-relaxed font-serif",
+            "placeholder:text-stone-300",
+            "outline-none border-none focus:ring-0",
+          ].join(" ")}
+        />
+
+        {/* Error */}
+        {error && (
+          <p className="text-red-400 text-xs">{error}</p>
         )}
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label="삭제"
-          disabled={!isEditing}
-          onClick={handleDeleteClick}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
       </div>
-
-      {/* AI loading skeleton */}
-      {isPending && (
-        <div role="status" aria-label="로딩 중" className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-      )}
-
-      {/* Textarea - always in DOM */}
-      <Textarea
-        value={content}
-        onChange={(e) => {
-          setContent(e.target.value);
-          if (error) setError(null);
-        }}
-        placeholder="오늘 하루를 기록해 보세요..."
-        className={isPending ? "sr-only" : "min-h-[200px] resize-none"}
-        aria-label="일기 내용"
-      />
-
-      {/* Inline error */}
-      {error && (
-        <p className="text-destructive text-sm">{error}</p>
-      )}
 
       {/* AI message */}
       {aiMessage && (
-        <div className="flex items-start gap-2 text-sm text-muted-foreground">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 text-xs text-stone-400">
+          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
           <p>{aiMessage}</p>
         </div>
       )}
 
-      {/* Action buttons */}
-      <div className="flex gap-2">
+      {/* Actions */}
+      <div className="flex items-center justify-between">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={isPending}
           onClick={handleAI}
+          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1.5"
         >
-          <Sparkles className="w-4 h-4 mr-1" />
+          <Sparkles className="w-3.5 h-3.5" />
           {aiButtonLabel}
         </Button>
 
-        <Button
+        <button
           type="button"
-          size="sm"
           onClick={handleSave}
+          className="px-5 py-2 rounded-full bg-amber-400 hover:bg-amber-500 text-white text-sm font-medium transition-colors"
         >
-          {isEditing ? "저장 (덮어쓰기)" : "저장"}
-        </Button>
+          {isEditing ? "수정 저장" : "저장하기"}
+        </button>
       </div>
 
       {/* Delete confirmation dialog */}
