@@ -135,6 +135,7 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
           {/* Diary editor */}
           <div className="flex-1">
             <DiaryEditor
+              key={selectedDate}
               date={selectedDate}
               initialContent={entries[selectedDate] ?? ""}
               isLoggedIn={isLoggedIn}

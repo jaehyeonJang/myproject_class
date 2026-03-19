@@ -120,7 +120,7 @@ export function DiaryEditor({
 
         {isLoggedIn && user && (
           <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-            {user.name.split(" ").map(p => p[0]).join("").toUpperCase().slice(0, 2) || "사"}
+            {user.name?.split(" ").filter(p => p.length > 0).map(p => p[0]).join("").toUpperCase().slice(0, 2) || "?"}
           </div>
         )}
 
