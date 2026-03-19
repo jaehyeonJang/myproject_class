@@ -11,7 +11,8 @@ interface GoogleLoginButtonProps {
   onLogout: () => void;
 }
 
-function getInitials(name: string): string {
+function getInitials(name: string | undefined): string {
+  if (!name) return "?";
   return name
     .split(" ")
     .filter((part) => part.length > 0)

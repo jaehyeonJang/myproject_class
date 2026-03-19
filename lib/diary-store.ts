@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 const STORAGE_KEY = "diary:v1";
 
@@ -25,8 +25,12 @@ function persistEntries(entries: DiaryEntries): void {
 }
 
 export function useDiaryStore() {
-  // Lazy init: runs only once, avoids re-reading localStorage on every render
-  const [entries, setEntries] = useState<DiaryEntries>(() => loadEntries());
+  // Start empty to match SSR, then hydrate from localStorage after mount
+  const [entries, setEntries] = useState<DiaryEntries>({});
+
+  useEffect(() => {
+    setEntries(loadEntries());
+  }, []);
 
   const save = useCallback((date: string, content: string) => {
     setEntries((prev) => {
