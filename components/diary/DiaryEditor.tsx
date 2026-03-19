@@ -1,0 +1,165 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { ChevronLeft, Trash2, Sparkles, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+
+export interface DiaryEditorProps {
+  date: string; // "YYYY-MM-DD"
+  initialContent: string;
+  isLoggedIn: boolean;
+  onSave: (content: string) => void;
+  onBack: () => void;
+  onDelete?: () => void;
+  onRequestAI?: () => Promise<{ content: string; noCalendarEvents?: boolean }>;
+}
+
+export function DiaryEditor({
+  date,
+  initialContent,
+  isLoggedIn,
+  onSave,
+  onBack,
+  onDelete,
+  onRequestAI,
+}: DiaryEditorProps) {
+  const [content, setContent] = useState(initialContent);
+  const [error, setError] = useState<string | null>(null);
+  const [aiMessage, setAiMessage] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  // Derived: is this an edit of existing diary?
+  const isEditing = initialContent.length > 0;
+
+  const handleSave = useCallback(() => {
+    if (content.trim() === "") {
+      setError("내용을 입력해 주세요");
+      return;
+    }
+    setError(null);
+    onSave(content);
+  }, [content, onSave]);
+
+  const handleBack = useCallback(() => {
+    onBack();
+  }, [onBack]);
+
+  const handleDelete = useCallback(() => {
+    onDelete?.();
+  }, [onDelete]);
+
+  const handleAI = useCallback(async () => {
+    if (!isLoggedIn) {
+      setAiMessage("AI 추천 기능은 구글 로그인이 필요합니다");
+      return;
+    }
+    if (!onRequestAI) return;
+
+    setIsAiLoading(true);
+    setAiMessage(null);
+    try {
+      const result = await onRequestAI();
+      setContent(result.content);
+      if (result.noCalendarEvents) {
+        setAiMessage("캘린더 일정이 없어 일반 회고로 초안을 작성했습니다");
+      }
+    } catch {
+      setAiMessage("AI 추천을 불러오지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsAiLoading(false);
+    }
+  }, [isLoggedIn, onRequestAI]);
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label="뒤로"
+          onClick={handleBack}
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>뒤로</span>
+        </Button>
+
+        <span className="flex-1 font-semibold text-base">{date}</span>
+
+        {isEditing && (
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Pencil className="w-3 h-3" />
+            수정 중
+          </Badge>
+        )}
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label="삭제"
+          disabled={!isEditing}
+          onClick={handleDelete}
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Textarea */}
+      <Textarea
+        value={content}
+        onChange={(e) => {
+          setContent(e.target.value);
+          if (error) setError(null);
+        }}
+        placeholder="오늘 하루를 기록해 보세요..."
+        className="min-h-[200px] resize-none"
+        aria-label="일기 내용"
+      />
+
+      {/* Inline error */}
+      {error && (
+        <p className="text-destructive text-sm">{error}</p>
+      )}
+
+      {/* AI message */}
+      {aiMessage && (
+        <p className="text-muted-foreground text-sm">{aiMessage}</p>
+      )}
+
+      {/* AI loading spinner */}
+      {isAiLoading && (
+        <div role="status" aria-label="로딩 중" className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-muted-foreground">AI 추천 생성 중...</span>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          aria-label="AI 추천"
+          disabled={isAiLoading}
+          onClick={handleAI}
+        >
+          <Sparkles className="w-4 h-4 mr-1" />
+          {isAiLoading ? "AI 추천" : "AI 추천"}
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSave}
+        >
+          {isEditing ? "저장 (덮어쓰기)" : "저장"}
+        </Button>
+      </div>
+    </div>
+  );
+}
