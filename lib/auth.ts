@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 declare global {
   interface Window {
@@ -25,6 +25,12 @@ export function useGoogleAuth(initialLoggedIn?: boolean) {
   const [isLoggedIn, setIsLoggedIn] = useState(initialLoggedIn ?? false);
   const [user, setUser] = useState<GoogleUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const accessTokenRef = useRef<string | null>(null);
+
+  const updateAccessToken = useCallback((token: string | null) => {
+    accessTokenRef.current = token;
+    setAccessToken(token);
+  }, []);
 
   const login = useCallback(() => {
     // window.google이 없으면 (테스트/SSR) 스킵
@@ -35,7 +41,7 @@ export function useGoogleAuth(initialLoggedIn?: boolean) {
       scope: "https://www.googleapis.com/auth/calendar.readonly",
       callback: (response: { access_token?: string }) => {
         if (response.access_token) {
-          setAccessToken(response.access_token);
+          updateAccessToken(response.access_token);
           setIsLoggedIn(true);
           fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
             headers: { Authorization: `Bearer ${response.access_token}` },
@@ -49,16 +55,16 @@ export function useGoogleAuth(initialLoggedIn?: boolean) {
       },
     });
     client.requestAccessToken();
-  }, []);
+  }, [updateAccessToken]);
 
   const logout = useCallback(() => {
-    if (accessToken && typeof window !== "undefined" && window.google) {
-      window.google.accounts.oauth2.revoke(accessToken, () => {});
+    if (accessTokenRef.current && typeof window !== "undefined" && window.google) {
+      window.google.accounts.oauth2.revoke(accessTokenRef.current, () => {});
     }
+    updateAccessToken(null);
     setIsLoggedIn(false);
     setUser(null);
-    setAccessToken(null);
-  }, [accessToken]);
+  }, [updateAccessToken]);
 
   return { isLoggedIn, user, accessToken, login, logout };
 }

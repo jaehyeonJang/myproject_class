@@ -132,6 +132,7 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
               date={selectedDate}
               initialContent={entries[selectedDate] ?? ""}
               isLoggedIn={isLoggedIn}
+              user={user}
               onSave={handleSave}
               onBack={handleBack}
               onDelete={handleDelete}

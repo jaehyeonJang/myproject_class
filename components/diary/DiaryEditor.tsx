@@ -20,6 +20,7 @@ export interface DiaryEditorProps {
   date: string; // "YYYY-MM-DD"
   initialContent: string;
   isLoggedIn: boolean;
+  user?: { name: string } | null;
   onSave: (content: string) => void;
   onBack: () => void;
   onDelete?: () => void;
@@ -30,6 +31,7 @@ export function DiaryEditor({
   date,
   initialContent,
   isLoggedIn,
+  user,
   onSave,
   onBack,
   onDelete,
@@ -104,6 +106,12 @@ export function DiaryEditor({
         </Button>
 
         <span className="flex-1 font-semibold text-base">{date}</span>
+
+        {isLoggedIn && user && (
+          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+            {user.name.split(" ").map(p => p[0]).join("").toUpperCase().slice(0, 2) || "사"}
+          </div>
+        )}
 
         {isEditing && (
           <Badge variant="secondary" className="flex items-center gap-1">
