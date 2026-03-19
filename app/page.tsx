@@ -111,14 +111,12 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
   );
 
   if (selectedDate !== null) {
-    // Editor screen: split layout with MiniCalendar on left and DiaryEditor on right
     return (
-      <div className="min-h-screen flex flex-col">
-        {/* Google login button - independent, outside calendar card */}
-        {loginButton}
+      <div className="min-h-screen bg-amber-50/60 flex flex-col items-center">
+        <div className="w-full max-w-3xl">{loginButton}</div>
 
-        <div className="flex flex-1 gap-6 px-4 pb-4">
-          {/* Mini calendar - fixed 168px */}
+        <div className="flex flex-1 gap-6 px-6 pb-6 w-full max-w-3xl">
+          {/* Mini calendar */}
           <div className="flex-shrink-0">
             <MiniCalendar
               year={displayedMonth.year}
@@ -133,7 +131,7 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
           </div>
 
           {/* Diary editor */}
-          <div className="flex-1">
+          <div className="flex-1 max-w-lg">
             <DiaryEditor
               key={selectedDate}
               date={selectedDate}
@@ -153,26 +151,27 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
 
   // Calendar screen
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Google login button - independent, outside calendar card */}
-      {loginButton}
+    <div className="min-h-screen bg-amber-50/60 flex flex-col items-center">
+      <div className="w-full max-w-3xl">{loginButton}</div>
 
-      <div className="flex justify-center px-4 pb-4">
-        <div className="w-full max-w-[480px] border rounded-lg p-4">
-          <h1 className="text-center font-bold text-lg mb-4">오늘의 일기</h1>
-          <CalendarGrid
-            year={displayedMonth.year}
-            month={displayedMonth.month}
-            markedDates={markedDates}
-            selectedDate={undefined}
-            today={TODAY}
-            onDateClick={handleDateClick}
-            onPrevMonth={handlePrevMonth}
-            onNextMonth={handleNextMonth}
-          />
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            날짜를 클릭하여 일기를 작성하세요
-          </p>
+      <div className="flex justify-center px-4 pb-8 w-full">
+        <div className="w-full max-w-[420px]">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-semibold text-stone-700 tracking-tight">나의 일기</h1>
+            <p className="text-sm text-stone-400 mt-1">날짜를 눌러 오늘을 기록해보세요</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4">
+            <CalendarGrid
+              year={displayedMonth.year}
+              month={displayedMonth.month}
+              markedDates={markedDates}
+              selectedDate={undefined}
+              today={TODAY}
+              onDateClick={handleDateClick}
+              onPrevMonth={handlePrevMonth}
+              onNextMonth={handleNextMonth}
+            />
+          </div>
         </div>
       </div>
     </div>
