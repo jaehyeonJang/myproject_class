@@ -1,44 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
+import { getCalendarEvents } from "@/lib/google-calendar";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { date, events, accessToken } = body as {
-      date: string;
-      events?: string[];
-      accessToken?: string;
-    };
+    const { date } = body as { date: string };
 
     if (!date) {
-      return NextResponse.json({ error: "date is required" }, { status: 400 });
+      return Response.json({ error: "date is required" }, { status: 400 });
     }
 
-    // If events are not provided, try to fetch from calendar-events
-    let calendarEvents: string[] = events ?? [];
-    let noCalendarEvents = false;
+    const accessToken = request.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
 
-    if (!events && accessToken) {
-      try {
-        const baseUrl =
-          process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-        const calendarRes = await fetch(
-          `${baseUrl}/api/calendar-events?date=${date}&accessToken=${encodeURIComponent(accessToken)}`
-        );
-        if (calendarRes.ok) {
-          const calendarData = await calendarRes.json();
-          calendarEvents = calendarData.events ?? [];
-        }
-      } catch {
-        calendarEvents = [];
-      }
-    }
+    // Fetch calendar events directly (no HTTP self-call)
+    const calendarEvents = await getCalendarEvents(date, accessToken);
 
-    noCalendarEvents = calendarEvents.length === 0;
+    const noCalendarEvents = calendarEvents.length === 0;
 
     const prompt = noCalendarEvents
       ? `오늘 날짜는 ${date}입니다. 캘린더에 일정이 없습니다. 오늘 하루를 돌아보는 일반적인 회고 일기 초안을 한국어로 200자 내외로 작성해 주세요.`
@@ -69,9 +50,9 @@ export async function POST(request: NextRequest) {
       response.noCalendarEvents = true;
     }
 
-    return NextResponse.json(response);
+    return Response.json(response);
   } catch {
-    return NextResponse.json(
+    return Response.json(
       { error: "AI 추천 생성에 실패했습니다" },
       { status: 500 }
     );

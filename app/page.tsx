@@ -86,8 +86,11 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
   const handleRequestAI = useCallback(async (): Promise<{ content: string; noCalendarEvents?: boolean }> => {
     const response = await fetch("/api/ai-draft", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: selectedDate, accessToken }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify({ date: selectedDate }),
     });
     if (!response.ok) {
       throw new Error("AI API error");

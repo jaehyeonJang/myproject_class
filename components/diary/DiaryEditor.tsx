@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { ChevronLeft, Trash2, Sparkles, Pencil } from "lucide-react";
+import { useState, useCallback, useRef, useTransition } from "react";
+import { ChevronLeft, Trash2, Sparkles, Pencil, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ export function DiaryEditor({
   const [error, setError] = useState<string | null>(null);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [aiDraftLoaded, setAiDraftLoaded] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   // Track in-flight request to prevent duplicate calls (transient, no re-render needed)
   const aiRequestInFlightRef = useRef(false);
@@ -72,32 +72,32 @@ export function DiaryEditor({
     setIsDeleteDialogOpen(false);
   }, [onDelete]);
 
-  const handleAI = useCallback(async () => {
+  const handleAI = useCallback(() => {
+    if (isPending || aiRequestInFlightRef.current) return;
     if (!isLoggedIn) {
       setAiMessage("AI 추천 기능은 구글 로그인이 필요합니다");
       return;
     }
     if (!onRequestAI) return;
-    // Prevent duplicate in-flight requests
-    if (aiRequestInFlightRef.current) return;
 
     aiRequestInFlightRef.current = true;
-    setIsAiLoading(true);
-    setAiMessage(null);
-    try {
-      const result = await onRequestAI();
-      setContent(result.content);
-      setAiDraftLoaded(true);
-      if (result.noCalendarEvents) {
-        setAiMessage("캘린더 일정이 없어 일반 회고로 초안을 작성했습니다");
+    startTransition(async () => {
+      try {
+        const result = await onRequestAI();
+        setContent(result.content);
+        setAiDraftLoaded(true);
+        if (result.noCalendarEvents) {
+          setAiMessage("캘린더 일정이 없어 일반 회고로 초안을 작성했습니다");
+        } else {
+          setAiMessage(null);
+        }
+      } catch {
+        setAiMessage("AI 추천을 불러오지 못했습니다. 다시 시도해 주세요.");
+      } finally {
+        aiRequestInFlightRef.current = false;
       }
-    } catch {
-      setAiMessage("AI 추천을 불러오지 못했습니다. 다시 시도해 주세요.");
-    } finally {
-      setIsAiLoading(false);
-      aiRequestInFlightRef.current = false;
-    }
-  }, [isLoggedIn, onRequestAI]);
+    });
+  }, [isPending, isLoggedIn, onRequestAI]);
 
   const aiButtonLabel = aiDraftLoaded ? "AI 재생성" : "AI 추천";
 
@@ -144,7 +144,7 @@ export function DiaryEditor({
       </div>
 
       {/* AI loading skeleton */}
-      {isAiLoading && (
+      {isPending && (
         <div role="status" aria-label="로딩 중" className="space-y-2">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
@@ -160,7 +160,7 @@ export function DiaryEditor({
           if (error) setError(null);
         }}
         placeholder="오늘 하루를 기록해 보세요..."
-        className={isAiLoading ? "sr-only" : "min-h-[200px] resize-none"}
+        className={isPending ? "sr-only" : "min-h-[200px] resize-none"}
         aria-label="일기 내용"
       />
 
@@ -171,7 +171,10 @@ export function DiaryEditor({
 
       {/* AI message */}
       {aiMessage && (
-        <p className="text-muted-foreground text-sm">{aiMessage}</p>
+        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <p>{aiMessage}</p>
+        </div>
       )}
 
       {/* Action buttons */}
@@ -180,7 +183,7 @@ export function DiaryEditor({
           type="button"
           variant="outline"
           size="sm"
-          disabled={isAiLoading}
+          disabled={isPending}
           onClick={handleAI}
         >
           <Sparkles className="w-4 h-4 mr-1" />
