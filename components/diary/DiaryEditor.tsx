@@ -5,6 +5,15 @@ import { ChevronLeft, Trash2, Sparkles, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface DiaryEditorProps {
   date: string; // "YYYY-MM-DD"
@@ -29,6 +38,7 @@ export function DiaryEditor({
   const [error, setError] = useState<string | null>(null);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Derived: is this an edit of existing diary?
   const isEditing = initialContent.length > 0;
@@ -46,8 +56,13 @@ export function DiaryEditor({
     onBack();
   }, [onBack]);
 
-  const handleDelete = useCallback(() => {
+  const handleDeleteClick = useCallback(() => {
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(() => {
     onDelete?.();
+    setIsDeleteDialogOpen(false);
   }, [onDelete]);
 
   const handleAI = useCallback(async () => {
@@ -102,7 +117,7 @@ export function DiaryEditor({
           size="sm"
           aria-label="삭제"
           disabled={!isEditing}
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -160,6 +175,19 @@ export function DiaryEditor({
           {isEditing ? "저장 (덮어쓰기)" : "저장"}
         </Button>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>일기를 삭제하시겠습니까?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

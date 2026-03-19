@@ -99,14 +99,37 @@ describe("DiaryEditor", () => {
     expect(screen.getByRole("button", { name: /삭제/ })).not.toBeDisabled();
   });
 
-  it("삭제 버튼 클릭 시 onDelete가 호출된다", async () => {
+  it("삭제 버튼 클릭 시 확인 다이얼로그가 표시된다", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
     render(<DiaryEditor {...baseProps} initialContent="기존 내용" onDelete={onDelete} />);
 
     await user.click(screen.getByRole("button", { name: /삭제/ }));
 
+    expect(screen.getByText(/일기를 삭제하시겠습니까\?/)).toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it("삭제 다이얼로그에서 확인 클릭 시 onDelete가 호출된다", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    render(<DiaryEditor {...baseProps} initialContent="기존 내용" onDelete={onDelete} />);
+
+    await user.click(screen.getByRole("button", { name: /삭제/ }));
+    await user.click(screen.getByRole("button", { name: /확인/ }));
+
     expect(onDelete).toHaveBeenCalled();
+  });
+
+  it("삭제 다이얼로그에서 취소 클릭 시 onDelete가 호출되지 않는다", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    render(<DiaryEditor {...baseProps} initialContent="기존 내용" onDelete={onDelete} />);
+
+    await user.click(screen.getByRole("button", { name: /삭제/ }));
+    await user.click(screen.getByRole("button", { name: /취소/ }));
+
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it("로그인하지 않은 상태에서 AI 추천 버튼 클릭 시 로그인 안내 메시지가 표시된다", async () => {
