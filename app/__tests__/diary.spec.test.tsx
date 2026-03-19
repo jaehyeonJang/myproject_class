@@ -26,7 +26,7 @@ const localStorageMock = (() => {
 })();
 
 function setDiaryEntries(entries: Record<string, string>) {
-  localStorageMock.setItem("diary-entries", JSON.stringify(entries));
+  localStorageMock.setItem("diary:v1", JSON.stringify(entries));
 }
 
 beforeEach(() => {

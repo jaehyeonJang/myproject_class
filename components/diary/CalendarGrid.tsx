@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface CalendarGridProps {
@@ -75,7 +75,9 @@ const DayCell = memo(function DayCell({
 }: DayCellProps) {
   const dateStr = toDateString(year, month, day);
 
-  const handleClick = () => onDateClick(dateStr);
+  const handleClick = useCallback(() => {
+    onDateClick(dateStr);
+  }, [onDateClick, dateStr]);
 
   return (
     <td
@@ -84,7 +86,6 @@ const DayCell = memo(function DayCell({
       <button
         type="button"
         onClick={handleClick}
-        aria-label={String(day)}
         aria-pressed={isSelected}
         aria-current={isToday ? "date" : undefined}
         className={[
@@ -123,9 +124,9 @@ interface EmptyCellProps {
   compact: boolean;
 }
 
-const EmptyCell = memo(function EmptyCell({ compact }: EmptyCellProps) {
+function EmptyCell({ compact }: EmptyCellProps) {
   return <td className={`${compact ? "p-0" : "p-0.5"}`} />;
-});
+}
 
 interface CalendarRowProps {
   week: (number | null)[];
@@ -246,6 +247,7 @@ export const CalendarGrid = memo(function CalendarGrid({
             {DAY_LABELS.map((label) => (
               <th
                 key={label}
+                scope="col"
                 className={`text-center font-medium text-muted-foreground ${dayLabelClass} ${compact ? "py-0.5" : "py-1"}`}
               >
                 {label}

@@ -94,7 +94,7 @@ describe("CalendarGrid", () => {
     expect(todayBtn).toHaveAttribute("aria-current", "date");
   });
 
-  it("first day of March 2025 is Saturday (index 6), so 5 leading empty cells", () => {
+  it("first day of March 2025 is Saturday (index 6), so 6 leading empty cells", () => {
     // March 2025 starts on Saturday
     render(<CalendarGrid {...DEFAULT_PROPS} />);
     // Day 1 should exist
