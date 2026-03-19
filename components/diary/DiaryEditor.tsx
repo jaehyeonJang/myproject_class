@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { ChevronLeft, Trash2, Sparkles, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,8 +41,11 @@ export function DiaryEditor({
   const [content, setContent] = useState(initialContent);
   const [error, setError] = useState<string | null>(null);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
+  const [aiDraftLoaded, setAiDraftLoaded] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // Track in-flight request to prevent duplicate calls (transient, no re-render needed)
+  const aiRequestInFlightRef = useRef(false);
 
   // Derived: is this an edit of existing diary?
   const isEditing = initialContent.length > 0;
@@ -74,12 +78,16 @@ export function DiaryEditor({
       return;
     }
     if (!onRequestAI) return;
+    // Prevent duplicate in-flight requests
+    if (aiRequestInFlightRef.current) return;
 
+    aiRequestInFlightRef.current = true;
     setIsAiLoading(true);
     setAiMessage(null);
     try {
       const result = await onRequestAI();
       setContent(result.content);
+      setAiDraftLoaded(true);
       if (result.noCalendarEvents) {
         setAiMessage("캘린더 일정이 없어 일반 회고로 초안을 작성했습니다");
       }
@@ -87,8 +95,11 @@ export function DiaryEditor({
       setAiMessage("AI 추천을 불러오지 못했습니다. 다시 시도해 주세요.");
     } finally {
       setIsAiLoading(false);
+      aiRequestInFlightRef.current = false;
     }
   }, [isLoggedIn, onRequestAI]);
+
+  const aiButtonLabel = aiDraftLoaded ? "AI 재생성" : "AI 추천";
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -132,7 +143,16 @@ export function DiaryEditor({
         </Button>
       </div>
 
-      {/* Textarea */}
+      {/* AI loading skeleton */}
+      {isAiLoading && (
+        <div role="status" aria-label="로딩 중" className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      )}
+
+      {/* Textarea - always in DOM */}
       <Textarea
         value={content}
         onChange={(e) => {
@@ -140,7 +160,7 @@ export function DiaryEditor({
           if (error) setError(null);
         }}
         placeholder="오늘 하루를 기록해 보세요..."
-        className="min-h-[200px] resize-none"
+        className={isAiLoading ? "sr-only" : "min-h-[200px] resize-none"}
         aria-label="일기 내용"
       />
 
@@ -154,26 +174,17 @@ export function DiaryEditor({
         <p className="text-muted-foreground text-sm">{aiMessage}</p>
       )}
 
-      {/* AI loading spinner */}
-      {isAiLoading && (
-        <div role="status" aria-label="로딩 중" className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-muted-foreground">AI 추천 생성 중...</span>
-        </div>
-      )}
-
       {/* Action buttons */}
       <div className="flex gap-2">
         <Button
           type="button"
           variant="outline"
           size="sm"
-          aria-label="AI 추천"
           disabled={isAiLoading}
           onClick={handleAI}
         >
           <Sparkles className="w-4 h-4 mr-1" />
-          {content && !isAiLoading ? "AI 재생성" : "AI 추천"}
+          {aiButtonLabel}
         </Button>
 
         <Button

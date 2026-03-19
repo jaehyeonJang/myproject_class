@@ -39,7 +39,7 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
     parseInitialMonth(initialMonth)
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const { isLoggedIn, user, login, logout } = useGoogleAuth(initialLoggedIn);
+  const { isLoggedIn, user, accessToken, login, logout } = useGoogleAuth(initialLoggedIn);
 
   // Derived: marked dates from entries
   const markedDates = Object.keys(entries);
@@ -83,15 +83,18 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
     }
   }, [selectedDate, remove]);
 
-  const handleRequestAI = useCallback(async () => {
-    const response = await fetch("/api/ai-recommend", {
+  const handleRequestAI = useCallback(async (): Promise<{ content: string; noCalendarEvents?: boolean }> => {
+    const response = await fetch("/api/ai-draft", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: selectedDate }),
+      body: JSON.stringify({ date: selectedDate, accessToken }),
     });
+    if (!response.ok) {
+      throw new Error("AI API error");
+    }
     const data = await response.json();
     return data as { content: string; noCalendarEvents?: boolean };
-  }, [selectedDate]);
+  }, [selectedDate, accessToken]);
 
   const loginButton = (
     <div className="flex justify-end p-4">
