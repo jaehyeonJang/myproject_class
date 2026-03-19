@@ -11,9 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.58",
     "@ai-sdk/google": "^3.0.43",
-    "@anthropic-ai/sdk": "^0.80.0",
     "@base-ui/react": "^1.2.0",
     "ai": "^6.0.116",
     "class-variance-authority": "^0.7.1",

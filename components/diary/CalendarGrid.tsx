@@ -95,10 +95,10 @@ const DayCell = memo(function DayCell({
             : "w-8 h-8 text-sm",
           "rounded-full transition-colors",
           isToday
-            ? "bg-primary text-primary-foreground font-bold"
+            ? "bg-amber-400 text-white font-bold"
             : isSelected
-            ? "bg-accent text-accent-foreground"
-            : "hover:bg-accent hover:text-accent-foreground",
+            ? "bg-amber-100 text-amber-900"
+            : "hover:bg-amber-50 hover:text-amber-900",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -110,7 +110,7 @@ const DayCell = memo(function DayCell({
             aria-hidden="true"
             className={[
               "absolute bottom-0.5 left-1/2 -translate-x-1/2",
-              "rounded-full bg-primary",
+              "rounded-full bg-amber-400",
               compact ? "w-[3px] h-[3px]" : "w-1 h-1",
             ].join(" ")}
           />
