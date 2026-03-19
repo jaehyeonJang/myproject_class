@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const { text } = await generateText({
       model: google("gemini-2.5-flash"),
       prompt,
-      maxTokens: 512,
+      maxOutputTokens: 512,
     });
 
     const response: { content: string; noCalendarEvents?: boolean } = {
