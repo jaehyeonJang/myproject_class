@@ -149,7 +149,7 @@ export function DiaryEditor({
           onClick={handleAI}
         >
           <Sparkles className="w-4 h-4 mr-1" />
-          {isAiLoading ? "AI 추천" : "AI 추천"}
+          {content && !isAiLoading ? "AI 재생성" : "AI 추천"}
         </Button>
 
         <Button

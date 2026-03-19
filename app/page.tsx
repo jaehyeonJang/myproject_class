@@ -6,10 +6,24 @@ import { CalendarGrid } from "@/components/diary/CalendarGrid";
 import { MiniCalendar } from "@/components/diary/MiniCalendar";
 import { DiaryEditor } from "@/components/diary/DiaryEditor";
 
-// Default display month for tests (March 2025)
-const DEFAULT_YEAR = 2025;
-const DEFAULT_MONTH = 3;
-const TODAY = "2025-03-19";
+function getTodayString(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+const TODAY = getTodayString();
+
+function parseInitialMonth(m?: string): { year: number; month: number } {
+  if (m) {
+    const [y, mo] = m.split("-").map(Number);
+    return { year: y, month: mo };
+  }
+  const d = new Date();
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
 
 type AppProps = {
   initialLoggedIn?: boolean;
@@ -18,14 +32,6 @@ type AppProps = {
 
 export default function App({ initialLoggedIn = false, initialMonth }: AppProps) {
   const { entries, save, remove } = useDiaryStore();
-
-  const parseInitialMonth = (m?: string) => {
-    if (m) {
-      const [y, mo] = m.split("-").map(Number);
-      return { year: y, month: mo };
-    }
-    return { year: DEFAULT_YEAR, month: DEFAULT_MONTH };
-  };
 
   const [displayedMonth, setDisplayedMonth] = useState(() =>
     parseInitialMonth(initialMonth)
@@ -85,19 +91,23 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
     return data as { content: string; noCalendarEvents?: boolean };
   }, [selectedDate]);
 
+  const loginButton = (
+    <div className="flex justify-end p-4">
+      <button
+        type="button"
+        className="text-sm text-muted-foreground border rounded px-3 py-1"
+      >
+        {isLoggedIn ? "로그아웃" : "구글 로그인"}
+      </button>
+    </div>
+  );
+
   if (selectedDate !== null) {
     // Editor screen: split layout with MiniCalendar on left and DiaryEditor on right
     return (
       <div className="min-h-screen flex flex-col">
         {/* Google login button - independent, outside calendar card */}
-        <div className="flex justify-end p-4">
-          <button
-            type="button"
-            className="text-sm text-muted-foreground border rounded px-3 py-1"
-          >
-            {isLoggedIn ? "로그아웃" : "구글 로그인"}
-          </button>
-        </div>
+        {loginButton}
 
         <div className="flex flex-1 gap-6 px-4 pb-4">
           {/* Mini calendar - fixed 168px */}
@@ -135,14 +145,7 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
   return (
     <div className="min-h-screen flex flex-col">
       {/* Google login button - independent, outside calendar card */}
-      <div className="flex justify-end p-4">
-        <button
-          type="button"
-          className="text-sm text-muted-foreground border rounded px-3 py-1"
-        >
-          {isLoggedIn ? "로그아웃" : "구글 로그인"}
-        </button>
-      </div>
+      {loginButton}
 
       <div className="flex justify-center px-4 pb-4">
         <div className="w-full max-w-[480px] border rounded-lg p-4">
