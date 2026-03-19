@@ -2,9 +2,11 @@
 
 import { useState, useCallback } from "react";
 import { useDiaryStore } from "@/lib/diary-store";
+import { useGoogleAuth } from "@/lib/auth";
 import { CalendarGrid } from "@/components/diary/CalendarGrid";
 import { MiniCalendar } from "@/components/diary/MiniCalendar";
 import { DiaryEditor } from "@/components/diary/DiaryEditor";
+import { GoogleLoginButton } from "@/components/diary/GoogleLoginButton";
 
 function getTodayString(): string {
   const d = new Date();
@@ -37,7 +39,7 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
     parseInitialMonth(initialMonth)
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [isLoggedIn] = useState(initialLoggedIn);
+  const { isLoggedIn, user, login, logout } = useGoogleAuth(initialLoggedIn);
 
   // Derived: marked dates from entries
   const markedDates = Object.keys(entries);
@@ -93,12 +95,12 @@ export default function App({ initialLoggedIn = false, initialMonth }: AppProps)
 
   const loginButton = (
     <div className="flex justify-end p-4">
-      <button
-        type="button"
-        className="text-sm text-muted-foreground border rounded px-3 py-1"
-      >
-        {isLoggedIn ? "로그아웃" : "구글 로그인"}
-      </button>
+      <GoogleLoginButton
+        isLoggedIn={isLoggedIn}
+        user={user}
+        onLogin={login}
+        onLogout={logout}
+      />
     </div>
   );
 
